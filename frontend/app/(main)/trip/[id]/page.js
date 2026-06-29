@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import WeatherWidget from '@/components/WeatherWidget';
 import TripMap from '@/components/TripMap';
+import { downloadTripPDF } from '@/components/TripPDF';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -78,6 +79,7 @@ export default function TripDetailPage() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesSaving, setNotesSaving] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -233,12 +235,28 @@ export default function TripDetailPage() {
           {trip.interests.map(i => (
             <span key={i} className="text-xs font-medium text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-full">{i}</span>
           ))}
-          <button
-            onClick={openEditModal}
-            className="flex items-center gap-1.5 ml-auto text-white/45 hover:text-white/80 text-xs font-semibold bg-[#334155] hover:bg-white/10 border border-white/8 px-3 py-1.5 rounded-full transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Edit Trip
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={async () => {
+                setPdfLoading(true);
+                await downloadTripPDF(trip);
+                setPdfLoading(false);
+              }}
+              disabled={pdfLoading}
+              className="flex items-center gap-1.5 text-white/45 hover:text-violet-400 text-xs font-semibold bg-[#334155] hover:bg-violet-500/10 border border-white/8 hover:border-violet-500/30 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+            >
+              {pdfLoading
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <NotebookPen className="w-3.5 h-3.5" />}
+              {pdfLoading ? 'Generating…' : 'Export PDF'}
+            </button>
+            <button
+              onClick={openEditModal}
+              className="flex items-center gap-1.5 text-white/45 hover:text-white/80 text-xs font-semibold bg-[#334155] hover:bg-white/10 border border-white/8 px-3 py-1.5 rounded-full transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit Trip
+            </button>
+          </div>
         </div>
         <p className="text-white/20 text-xs mt-2">Created {new Date(trip.createdAt).toLocaleDateString()}</p>
       </div>
