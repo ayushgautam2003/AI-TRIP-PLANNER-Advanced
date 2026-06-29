@@ -4,11 +4,14 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-webpush.setVapidDetails(
-  'mailto:' + (process.env.VAPID_EMAIL || 'admin@airtripplanner.com'),
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+const vapidConfigured = process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY;
+if (vapidConfigured) {
+  webpush.setVapidDetails(
+    'mailto:' + (process.env.VAPID_EMAIL || 'admin@airtripplanner.com'),
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 // In-memory subscription store — replace with DB collection in production
 const subscriptions = new Map(); // userId → subscription
@@ -17,6 +20,7 @@ router.use(protect);
 
 // POST /api/notifications/subscribe
 router.post('/subscribe', async (req, res) => {
+  if (!vapidConfigured) return res.status(503).json({ message: 'Push notifications not configured on this server.' });
   const { subscription } = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ message: 'Invalid subscription' });
   subscriptions.set(req.user._id.toString(), subscription);

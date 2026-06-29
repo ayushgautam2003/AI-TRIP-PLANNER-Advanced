@@ -4,6 +4,7 @@ import withPWA from 'next-pwa';
 const nextConfig = {
   transpilePackages: ['react-google-places-autocomplete'],
   devIndicators: false,
+  turbopack: {},
 };
 
 export default withPWA({

@@ -14,7 +14,8 @@ router.use(protect);
 const tripGenLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => req.headers.authorization || req.ip,
+  keyGenerator: (req) => req.user?._id?.toString() || 'anonymous',
+  validate: { keyGeneratorIpFallback: false },
   message: { message: 'Trip generation limit reached. Please wait an hour before generating more trips.' },
   standardHeaders: true,
   legacyHeaders: false,
