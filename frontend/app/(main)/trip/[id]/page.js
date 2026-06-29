@@ -13,6 +13,7 @@ import {
   Phone, AlertTriangle, Map, Navigation,
 } from 'lucide-react';
 import WeatherWidget from '@/components/WeatherWidget';
+import TripMap from '@/components/TripMap';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -585,31 +586,13 @@ export default function TripDetailPage() {
               {expandedDay === dayIndex && (
                 <div className="border-t border-white/6 px-5 py-5 space-y-6">
 
-                  {/* Map embed */}
+                  {/* Interactive Map */}
                   {mapDay === dayIndex && day.activities.length > 0 && (
-                    <div className="rounded-xl overflow-hidden border border-sky-500/20">
-                      <iframe
-                        title={`Day ${day.day} map`}
-                        width="100%"
-                        height="260"
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                        src={mapEmbedUrl(day.activities, trip.destination)}
-                      />
-                      <div className="bg-sky-500/10 border-t border-sky-500/15 px-4 py-2.5 flex items-center justify-between">
-                        <p className="text-xs text-sky-400/80">
-                          {day.activities.length} stops · Day {day.day}
-                        </p>
-                        <a
-                          href={dayRouteUrl(day.activities, trip.destination)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-xs font-bold text-white bg-sky-500 hover:bg-sky-600 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          <Navigation className="w-3 h-3" /> Get Route
-                        </a>
-                      </div>
-                    </div>
+                    <TripMap
+                      activities={day.activities}
+                      destination={trip.destination}
+                      dayNumber={day.day}
+                    />
                   )}
 
                   {/* Activities */}
