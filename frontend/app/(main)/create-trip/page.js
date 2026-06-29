@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { TRAVELER_OPTIONS, BUDGET_OPTIONS, INTEREST_OPTIONS } from '@/constants/options';
 import { Loader2, MapPin } from 'lucide-react';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
+import VoiceInput from '@/components/VoiceInput';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -172,7 +173,15 @@ export default function CreateTripPage() {
     <div className="max-w-3xl mx-auto px-5 py-12">
 
       <h1 className="text-3xl font-extrabold text-white mb-2">Plan Your Next Adventure</h1>
-      <p className="text-slate-400 text-sm mb-10">Tell us your preferences and AI will craft your perfect itinerary.</p>
+      <p className="text-slate-400 text-sm mb-6">Tell us your preferences and AI will craft your perfect itinerary.</p>
+
+      <VoiceInput onResult={(parsed, _raw) => {
+        if (parsed.destinationLabel) setDestination({ label: parsed.destinationLabel, value: {} });
+        if (parsed.days) setDays(parsed.days);
+        if (parsed.budgetType) setBudgetType(parsed.budgetType);
+        if (parsed.travelersType) setTravelersType(parsed.travelersType);
+        if (parsed.interests?.length) setInterests(parsed.interests);
+      }} />
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-8">
