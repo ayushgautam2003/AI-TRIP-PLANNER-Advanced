@@ -16,6 +16,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 import TripMap from '@/components/TripMap';
 import { downloadTripPDF } from '@/components/TripPDF';
 import CurrencyConverter from '@/components/CurrencyConverter';
+import TripChat from '@/components/TripChat';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -914,6 +915,9 @@ export default function TripDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ── Floating AI Chat ── */}
+      <TripChat tripId={id} destination={trip.destination} />
 
     </div>
   );

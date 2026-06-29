@@ -3,6 +3,9 @@ import rateLimit from 'express-rate-limit';
 import Trip from '../models/Trip.js';
 import { protect } from '../middleware/auth.js';
 import { generateTripPlan, regenerateDay } from '../agents/orchestrator.js';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const router = express.Router();
 router.use(protect);
@@ -226,6 +229,71 @@ router.post('/:id/full-regenerate', async (req, res) => {
     res.json({ trip });
   } catch {
     res.status(500).json({ message: 'Failed to regenerate trip. Please try again.' });
+  }
+});
+
+// POST /api/trips/:id/chat — streaming AI chat with full trip context
+router.post('/:id/chat', async (req, res) => {
+  const { message, history = [] } = req.body;
+  if (!message?.trim()) return res.status(400).json({ message: 'message is required' });
+
+  const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id }).lean();
+  if (!trip) return res.status(404).json({ message: 'Trip not found' });
+
+  const systemPrompt = `You are an expert AI travel assistant helping with a specific trip plan. You have full knowledge of this trip and can answer questions, suggest improvements, give packing advice, recommend alternatives, and explain local culture.
+
+TRIP CONTEXT:
+- Destination: ${trip.destination}
+- Duration: ${trip.days} days
+- Budget: ${trip.budgetType}
+- Travelers: ${trip.travelersType}
+- Interests: ${trip.interests?.join(', ') || 'general'}
+- Estimated total budget: ${trip.estimatedBudget?.total || 'not specified'}
+
+ITINERARY SUMMARY:
+${trip.itinerary?.map(d => `Day ${d.day} (${d.theme || ''}): ${d.activities?.map(a => a.title).join(', ')}`).join('\n') || 'No itinerary'}
+
+HOTELS: ${trip.hotels?.map(h => h.name).join(', ') || 'none'}
+RESTAURANTS: ${trip.restaurants?.map(r => r.name).join(', ') || 'none'}
+
+EMERGENCY INFO:
+- General Emergency: ${trip.emergencyInfo?.generalEmergency || 'unknown'}
+- Currency: ${trip.emergencyInfo?.localCurrency || 'unknown'}
+
+Be concise, friendly, and specific to THIS trip. Format responses with bullet points when listing multiple items. Never make up specific prices unless they match the trip budget level.`;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  try {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...history.slice(-10).map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message },
+    ];
+
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages,
+      stream: true,
+      temperature: 0.7,
+      max_tokens: 600,
+    });
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+  } catch (err) {
+    res.write(`data: ${JSON.stringify({ error: err.message || 'Chat failed' })}\n\n`);
+  } finally {
+    res.end();
   }
 });
 
