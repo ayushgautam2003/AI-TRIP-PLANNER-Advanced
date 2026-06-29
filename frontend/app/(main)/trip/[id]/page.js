@@ -10,7 +10,7 @@ import {
   RefreshCw, Plus, Trash2, Loader2, ChevronDown, ChevronUp,
   ExternalLink, Pencil, X, Activity, UtensilsCrossed,
   Lightbulb, Globe, Bus, CloudSun, Info, Trophy, NotebookPen, Check,
-  Phone, AlertTriangle, Map, Navigation,
+  Phone, AlertTriangle, Map,
 } from 'lucide-react';
 import WeatherWidget from '@/components/WeatherWidget';
 import TripMap from '@/components/TripMap';
@@ -197,16 +197,6 @@ export default function TripDetailPage() {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   }
 
-  function dayRouteUrl(activities, destination) {
-    const waypoints = activities.map(a => encodeURIComponent(`${a.title} ${destination}`)).join('/');
-    return `https://www.google.com/maps/dir/${waypoints}`;
-  }
-
-  function mapEmbedUrl(activities, destination) {
-    const query = activities.map(a => a.title).join(' + ') + ' in ' + destination;
-    return `https://www.google.com/maps/embed/v1/search?key=${process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY}&q=${encodeURIComponent(query)}&zoom=13`;
-  }
-
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
@@ -257,8 +247,8 @@ export default function TripDetailPage() {
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-xl px-4 py-3 mb-6">{error}</div>
       )}
 
-      {/* Live Weather */}
-      <WeatherWidget destination={trip.destination} />
+      {/* Weather forecast for trip duration */}
+      <WeatherWidget destination={trip.destination} days={trip.days} />
 
       {/* ── Destination Insights ── */}
       {trip.destinationInsights && (
