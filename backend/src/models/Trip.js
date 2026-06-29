@@ -72,6 +72,14 @@ const emergencyInfoSchema = new mongoose.Schema({
   tippingCulture: String,
 }, { _id: false });
 
+const commentSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userName: { type: String, required: true },
+  dayIndex: { type: Number, required: true },
+  activityIndex: { type: Number, required: true },
+  text: { type: String, required: true, maxlength: 500 },
+}, { timestamps: true });
+
 const tripSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   destination: { type: String, required: true },
@@ -87,6 +95,9 @@ const tripSchema = new mongoose.Schema({
   destinationInsights: destinationInsightsSchema,
   emergencyInfo: emergencyInfoSchema,
   notes: { type: String, default: '' },
+  comments: [commentSchema],
+  shareToken: { type: String, index: true, sparse: true },
+  shareEnabled: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.model('Trip', tripSchema);

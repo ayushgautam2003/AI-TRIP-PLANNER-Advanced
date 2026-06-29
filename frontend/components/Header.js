@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PlaneTakeoff, LogOut, LayoutDashboard, Plus } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -48,6 +49,8 @@ export default function Header() {
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">My Trips</span>
               </Link>
+
+              <NotificationBell />
 
               <Link
                 href="/create-trip"

@@ -1,4 +1,9 @@
 import 'dotenv/config';
+// Datadog APM — only active when DD_API_KEY is set (production)
+if (process.env.DD_API_KEY) {
+  const { default: tracer } = await import('dd-trace');
+  tracer.init({ logInjection: true });
+}
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -9,6 +14,7 @@ import { connectDB } from './db.js';
 import authRoutes from './routes/auth.js';
 import tripRoutes from './routes/trips.js';
 import placesRoutes from './routes/places.js';
+import notificationRoutes from './routes/notifications.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +58,18 @@ app.use('/api/auth', authLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/places', placesRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+// Public shared trip — no auth required
+app.get('/api/shared/:token', async (req, res) => {
+  try {
+    const { default: Trip } = await import('./models/Trip.js');
+    const trip = await Trip.findOne({ shareToken: req.params.token, shareEnabled: true })
+      .select('-userId -shareToken -comments');
+    if (!trip) return res.status(404).json({ message: 'Shared trip not found or sharing has been disabled.' });
+    res.json({ trip });
+  } catch { res.status(500).json({ message: 'Could not load shared trip.' }); }
+});
 
 // ── Health check — tests every pipeline ─────────────────────────────────────
 app.get('/api/health', async (req, res) => {

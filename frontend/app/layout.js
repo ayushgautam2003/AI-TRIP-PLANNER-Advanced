@@ -9,6 +9,13 @@ export const metadata = {
   title: 'AI Trip Planner',
   description: 'Plan your perfect trip with the power of AI',
   icons: { icon: 'data:,' },
+  manifest: '/manifest.json',
+  themeColor: '#8b5cf6',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'AI Trip Planner',
+  },
 };
 
 export default function RootLayout({ children }) {

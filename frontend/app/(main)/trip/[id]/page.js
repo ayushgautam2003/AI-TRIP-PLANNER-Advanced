@@ -17,6 +17,8 @@ import TripMap from '@/components/TripMap';
 import { downloadTripPDF } from '@/components/TripPDF';
 import CurrencyConverter from '@/components/CurrencyConverter';
 import TripChat from '@/components/TripChat';
+import ActivityComments from '@/components/ActivityComments';
+import ShareModal from '@/components/ShareModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -82,6 +84,7 @@ export default function TripDetailPage() {
   const [notesSaved, setNotesSaved] = useState(false);
   const [notesSaving, setNotesSaving] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [comments, setComments] = useState([]);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -90,7 +93,7 @@ export default function TripDetailPage() {
   useEffect(() => {
     if (!id) return;
     api.get(`/api/trips/${id}`)
-      .then(({ data }) => { setTrip(data.trip); setNotes(data.trip.notes || ''); setLoading(false); })
+      .then(({ data }) => { setTrip(data.trip); setNotes(data.trip.notes || ''); setComments(data.trip.comments || []); setLoading(false); })
       .catch(() => { setError('Trip not found or you do not have access.'); setLoading(false); });
   }, [id]);
 
@@ -239,19 +242,14 @@ export default function TripDetailPage() {
           ))}
           <div className="flex items-center gap-2 ml-auto">
             <button
-              onClick={async () => {
-                setPdfLoading(true);
-                await downloadTripPDF(trip);
-                setPdfLoading(false);
-              }}
+              onClick={async () => { setPdfLoading(true); await downloadTripPDF(trip); setPdfLoading(false); }}
               disabled={pdfLoading}
               className="flex items-center gap-1.5 text-white/45 hover:text-violet-400 text-xs font-semibold bg-[#334155] hover:bg-violet-500/10 border border-white/8 hover:border-violet-500/30 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
             >
-              {pdfLoading
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : <NotebookPen className="w-3.5 h-3.5" />}
+              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <NotebookPen className="w-3.5 h-3.5" />}
               {pdfLoading ? 'Generating…' : 'Export PDF'}
             </button>
+            <ShareModal tripId={id} initialToken={trip.shareToken} initialEnabled={trip.shareEnabled} />
             <button
               onClick={openEditModal}
               className="flex items-center gap-1.5 text-white/45 hover:text-white/80 text-xs font-semibold bg-[#334155] hover:bg-white/10 border border-white/8 px-3 py-1.5 rounded-full transition-colors"
@@ -663,6 +661,13 @@ export default function TripDetailPage() {
                           </button>
                         </div>
                       </div>
+                      <ActivityComments
+                        tripId={id}
+                        dayIndex={dayIndex}
+                        activityIndex={actIndex}
+                        comments={comments}
+                        onUpdate={setComments}
+                      />
                     </div>
                   ))}
 

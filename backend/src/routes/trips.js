@@ -232,6 +232,56 @@ router.post('/:id/full-regenerate', async (req, res) => {
   }
 });
 
+// POST /api/trips/:id/comments — add comment to an activity
+router.post('/:id/comments', async (req, res) => {
+  const { dayIndex, activityIndex, text } = req.body;
+  if (text?.trim()?.length < 1) return res.status(400).json({ message: 'Comment text is required' });
+  try {
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    trip.comments.push({ userId: req.user._id, userName: req.user.name || req.user.email, dayIndex, activityIndex, text: text.trim() });
+    await trip.save();
+    res.json({ comments: trip.comments });
+  } catch { res.status(500).json({ message: 'Failed to add comment' }); }
+});
+
+// DELETE /api/trips/:id/comments/:commentId
+router.delete('/:id/comments/:commentId', async (req, res) => {
+  try {
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    trip.comments = trip.comments.filter(c => c._id.toString() !== req.params.commentId);
+    await trip.save();
+    res.json({ comments: trip.comments });
+  } catch { res.status(500).json({ message: 'Failed to delete comment' }); }
+});
+
+// POST /api/trips/:id/share — generate shareable read-only link
+router.post('/:id/share', async (req, res) => {
+  try {
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    if (!trip.shareToken) {
+      const { randomBytes } = await import('crypto');
+      trip.shareToken = randomBytes(20).toString('hex');
+    }
+    trip.shareEnabled = true;
+    await trip.save();
+    res.json({ shareToken: trip.shareToken });
+  } catch { res.status(500).json({ message: 'Failed to generate share link' }); }
+});
+
+// DELETE /api/trips/:id/share — disable sharing
+router.delete('/:id/share', async (req, res) => {
+  try {
+    const trip = await Trip.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!trip) return res.status(404).json({ message: 'Trip not found' });
+    trip.shareEnabled = false;
+    await trip.save();
+    res.json({ message: 'Sharing disabled' });
+  } catch { res.status(500).json({ message: 'Failed to disable sharing' }); }
+});
+
 // POST /api/trips/:id/chat — streaming AI chat with full trip context
 router.post('/:id/chat', async (req, res) => {
   const { message, history = [] } = req.body;
